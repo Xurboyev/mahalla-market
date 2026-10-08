@@ -1,14 +1,15 @@
 import { HStack, Text, VStack } from "@seed-design/react";
 import type { ActivityComponentType } from "@stackflow/react";
-import { SendHorizontal, Star } from "lucide-react";
+import { Flag, SendHorizontal, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
-import { AppBar, AppBarBackButton, AppBarLeft, AppBarMain } from "seed-design/ui/app-bar";
+import { AppBar, AppBarBackButton, AppBarIconButton, AppBarLeft, AppBarMain, AppBarRight } from "seed-design/ui/app-bar";
 import { AppScreen, AppScreenContent } from "seed-design/ui/app-screen";
 import { ActionButton } from "seed-design/ui/action-button";
 import { MannerTemp } from "seed-design/ui/manner-temp";
 import { useAuth } from "../auth/AuthContext";
 import {
+  createReport,
   createReview,
   formatPrice,
   getChatHistory,
@@ -42,6 +43,10 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
   const [reviewDone, setReviewDone] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportSent, setReportSent] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const roomId = room?.id ?? null;
@@ -121,6 +126,26 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
     }
   };
 
+  const submitReport = async () => {
+    if (!token || reportReason.trim().length < 3 || reportBusy) return;
+    setReportBusy(true);
+    try {
+      await createReport(token, {
+        targetType: "LISTING",
+        targetId: params.listingId,
+        reason: reportReason.trim(),
+      });
+      setReportSent(true);
+      setReportOpen(false);
+      setReportReason("");
+    } catch {
+      // Xatolik bo'lsa ham formani yopamiz — foydalanuvchiga keraksiz texnik tafsilot ko'rsatmaymiz
+      setReportOpen(false);
+    } finally {
+      setReportBusy(false);
+    }
+  };
+
   return (
     <AppScreen>
       <AppBar>
@@ -138,7 +163,54 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
             )}
           </HStack>
         </AppBarMain>
+        <AppBarRight>
+          <AppBarIconButton aria-label="Shikoyat qilish" onClick={() => setReportOpen((v) => !v)}>
+            <Flag />
+          </AppBarIconButton>
+        </AppBarRight>
       </AppBar>
+
+      {reportOpen && (
+        <VStack
+          gap="x2"
+          px="spacingX.globalGutter"
+          py="x3"
+          style={{
+            borderBottom: "1px solid var(--seed-color-stroke-neutral-muted)",
+            background: "var(--seed-color-bg-neutral-weak)",
+          }}
+        >
+          <Text textStyle="t4Bold">Bu e'lon/foydalanuvchi haqida shikoyat</Text>
+          <textarea
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            placeholder="Nima uchun shikoyat qilyapsiz? (kamida 3 belgi)"
+            rows={3}
+            style={{
+              width: "100%",
+              padding: 10,
+              borderRadius: 8,
+              border: "1px solid var(--seed-color-stroke-neutral-weak, #ddd)",
+              fontSize: 14,
+              resize: "vertical",
+            }}
+          />
+          <HStack gap="x2">
+            <ActionButton
+              size="medium"
+              variant="brandSolid"
+              disabled={reportReason.trim().length < 3}
+              loading={reportBusy}
+              onClick={submitReport}
+            >
+              Yuborish
+            </ActionButton>
+            <ActionButton size="medium" variant="neutralOutline" onClick={() => setReportOpen(false)}>
+              Bekor qilish
+            </ActionButton>
+          </HStack>
+        </VStack>
+      )}
 
       <AppScreenContent>
         {listing && (
@@ -214,6 +286,11 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
           {reviewDone && !reviewError && (
             <Text textStyle="t3Regular" color="fg.positive" style={{ textAlign: "center" }}>
               Rahmat! Bahoyingiz qabul qilindi.
+            </Text>
+          )}
+          {reportSent && (
+            <Text textStyle="t3Regular" color="fg.neutralSubtle" style={{ textAlign: "center" }}>
+              Shikoyatingiz qabul qilindi, moderatorlar ko'rib chiqadi.
             </Text>
           )}
           {messages.map((m) => {

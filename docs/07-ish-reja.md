@@ -73,10 +73,12 @@ boyitib, joriy kod holatiga qarab aniq sprint-reja chiqaradi.
 
 **Brauzerda to'liq sinovdan o'tkazildi:** xaridor chat ochdi → sotuvchi (boshqa JWT bilan) e'lonni SOLD qildi → xaridor 5 yulduz bahо berdi → sotuvchi harorati 51.8°C dan 36.9°C ga **real vaqtda** qayta hisoblandi va API orqali tasdiqlandi.
 
-### Sprint 2.3 — Moderatsiya — ~2-3 kun
-19. API: `POST /reports` (LISTING/USER/MESSAGE), admin uchun oddiy `GET /reports?status=OPEN`
-20. Taqiqlangan so'zlar/kategoriya filtri e'lon yaratishda (oddiy ro'yxat asosida, ML keyinroq)
-21. Chatda "Shikoyat qilish" tugmasi doim ko'rinadi
+### Sprint 2.3 — Moderatsiya — ✅ Bajarildi (2026-10-08)
+19. ✅ API: `reports` moduli — `POST /reports` (LISTING/USER/MESSAGE, har qanday auth foydalanuvchi), `GET /reports?status=OPEN` va `PATCH /reports/:id/status` (faqat admin — yangi `users.isAdmin` ustuni + `AdminGuard`)
+20. ✅ Taqiqlangan so'zlar filtri `listings.service.ts`da (qurol, giyohvand, soxta hujjat va h.k. — `docs/01-product.md` §3.7 asosida), e'lon yaratishda 400 xato qaytaradi
+21. ✅ `ChatActivity`: AppBar'da doim ko'rinadigan 🚩 "Shikoyat qilish" tugmasi, matn kiritib yuborish, moderatsiya navbatiga tushadi
+
+**Brauzerda to'liq sinovdan o'tkazildi:** chatdan shikoyat yuborildi → admin (`isAdmin=true`) `GET /reports`da ko'rdi; taqiqlangan so'z bilan e'lon yaratish 400 bilan bloklandi; oddiy foydalanuvchi admin endpoint'ga kira olmadi (403).
 
 ### Sprint 3 — Pilot tayyorligi — ~2 hafta
 20. Eskiz.uz haqiqiy SMS integratsiyasi (BullMQ navbati, retry)

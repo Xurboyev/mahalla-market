@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { and, desc, eq, ilike, inArray, ne, type SQL, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { InjectDb } from "../db/db.module";
@@ -7,6 +7,34 @@ import { chatRooms, favorites, listingImages, listings, regions, users } from ".
 export const PAGE_SIZE = 20;
 
 export type ListingStatus = (typeof listings.$inferSelect)["status"];
+
+/**
+ * Taqiqlangan tovarlar ro'yxati (`docs/01-product.md` §3.7): qurol, dori-darmon,
+ * hujjatlar va h.k. MVP uchun oddiy so'z-ro'yxati; keyinroq ML/kategoriya bo'yicha
+ * kengaytiriladi (`docs/07-ish-reja.md` Sprint 2.3).
+ */
+const BANNED_KEYWORDS = [
+  "qurol",
+  "pistolet",
+  "miltiq",
+  "granata",
+  "giyohvand",
+  "narkotik",
+  "bank kartasi raqami",
+  "login parol sotiladi",
+  "soxta pasport",
+  "soxta guvohnoma",
+  "qurolli",
+];
+
+function assertNotBanned(text: string) {
+  const lower = text.toLowerCase();
+  const hit = BANNED_KEYWORDS.find((w) => lower.includes(w));
+  if (hit) {
+    throw new BadRequestException("E'lon matnida taqiqlangan so'z/mavzu aniqlandi. Qoidalarni tekshiring.");
+  }
+}
+
 
 /** Ilova (apps/app) kutadigan e'lon ko'rinishi */
 export type ListingDto = {
@@ -136,6 +164,7 @@ export class ListingsService {
       imageUrls?: string[];
     },
   ) {
+    assertNotBanned(`${dto.title} ${dto.description ?? ""}`);
     let regionId = dto.regionId;
     if (!regionId) {
       const seller = await this.db.query.users.findFirst({ where: eq(users.id, sellerId) });

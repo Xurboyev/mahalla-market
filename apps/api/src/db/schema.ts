@@ -48,6 +48,7 @@ export const users = pgTable("users", {
   regionId: integer("region_id").references(() => regions.id),
   temperature: real("temperature").notNull().default(36.5), // Mahalla harorati
   isBlocked: boolean("is_blocked").notNull().default(false),
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: createdAt(),
 });
 

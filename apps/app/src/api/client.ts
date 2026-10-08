@@ -143,6 +143,18 @@ export async function createReview(
   return res.json();
 }
 
+export async function createReport(
+  token: string,
+  data: { targetType: "LISTING" | "USER" | "MESSAGE"; targetId: string; reason: string },
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/reports`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) return parseError(res, "Shikoyat yuborishda xatolik");
+}
+
 // ---- Rasm yuklash (MinIO presigned URL) ----
 export async function presignUpload(
   token: string,
