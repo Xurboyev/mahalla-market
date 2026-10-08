@@ -1,0 +1,106 @@
+import type { Category, Listing } from "./types";
+
+/** API hali ishga tushmaganda ishlatiladigan namunaviy ma'lumotlar. */
+
+export const CATEGORIES: Category[] = [
+  { id: 1, slug: "elektronika", name: "Elektronika" },
+  { id: 2, slug: "uy-rozgor", name: "Uy-ro'zg'or" },
+  { id: 3, slug: "kiyim", name: "Kiyim-kechak" },
+  { id: 4, slug: "bolalar", name: "Bolalar uchun" },
+  { id: 5, slug: "mebel", name: "Mebel" },
+  { id: 6, slug: "sport", name: "Sport va hobbi" },
+  { id: 7, slug: "kitob", name: "Kitoblar" },
+  { id: 8, slug: "tekin", name: "Tekin beraman" },
+];
+
+const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+
+export const LISTINGS: Listing[] = [
+  {
+    id: "l1",
+    title: "Samsung Galaxy A54, 128 GB, ideal holatda",
+    description:
+      "Bir yil ishlatilgan, qutisi va zaryadlovchisi bor. Ekranida birorta ham chiziq yo'q, doim g'ilofda yurgan. Yunusobod-4 metro yonida uchrashsak bo'ladi.",
+    price: 2_900_000,
+    isFree: false,
+    status: "ACTIVE",
+    categoryId: 1,
+    mahalla: "Yunusobod-4",
+    createdAt: minutesAgo(3),
+    chatCount: 4,
+    likeCount: 11,
+    seller: { id: "u1", name: "Dilshod", mahalla: "Yunusobod-4", temperature: 42.3 },
+  },
+  {
+    id: "l2",
+    title: "Bolalar velosipedi (4–7 yosh)",
+    description:
+      "O'g'lim katta bo'lib qoldi, velosiped deyarli yangi. Yordamchi g'ildiraklari ham bor. Narxini biroz kelishamiz.",
+    price: 450_000,
+    isFree: false,
+    status: "ACTIVE",
+    categoryId: 4,
+    mahalla: "Bodomzor",
+    createdAt: minutesAgo(25),
+    chatCount: 2,
+    likeCount: 6,
+    seller: { id: "u2", name: "Malika opa", mahalla: "Bodomzor", temperature: 51.8 },
+  },
+  {
+    id: "l3",
+    title: "Divan-krovat, kulrang",
+    description:
+      "Ko'chib ketayotganimiz uchun sotiladi. Yig'iladigan, ichida bo'shliq bor. O'zingiz olib ketishingiz kerak (3-qavat, lift bor).",
+    price: 1_200_000,
+    isFree: false,
+    status: "RESERVED",
+    categoryId: 5,
+    mahalla: "Yunusobod-4",
+    createdAt: minutesAgo(80),
+    chatCount: 7,
+    likeCount: 19,
+    seller: { id: "u3", name: "Jasur", mahalla: "Yunusobod-4", temperature: 37.1 },
+  },
+  {
+    id: "l4",
+    title: "Gul tuvaklari, 6 dona — tekin",
+    description: "Bo'sh tuvaklar, kimga kerak bo'lsa olib keting. Kechqurun 18:00 dan keyin uydaman.",
+    price: null,
+    isFree: true,
+    status: "ACTIVE",
+    categoryId: 8,
+    mahalla: "Minor",
+    createdAt: minutesAgo(140),
+    chatCount: 1,
+    likeCount: 3,
+    seller: { id: "u4", name: "Nodira", mahalla: "Minor", temperature: 36.5 },
+  },
+  {
+    id: "l5",
+    title: "O'tkan kunlar — Abdulla Qodiriy (qattiq muqova)",
+    description: "Yaxshi holatda, sahifalari toza. Boshqa kitoblar ham bor, so'rang.",
+    price: 60_000,
+    isFree: false,
+    status: "ACTIVE",
+    categoryId: 7,
+    mahalla: "Bodomzor",
+    createdAt: minutesAgo(300),
+    chatCount: 0,
+    likeCount: 2,
+    seller: { id: "u5", name: "Sardor", mahalla: "Bodomzor", temperature: 39.4 },
+  },
+  {
+    id: "l6",
+    title: "Gantellar to'plami 2×10 kg",
+    description: "Yig'iladigan gantellar, disklari to'liq. Uyda shug'ullanish uchun juda qulay.",
+    price: 380_000,
+    isFree: false,
+    status: "SOLD",
+    categoryId: 6,
+    mahalla: "Minor",
+    createdAt: minutesAgo(1500),
+    chatCount: 5,
+    likeCount: 8,
+    seller: { id: "u6", name: "Bekzod", mahalla: "Minor", temperature: 45.0 },
+  },
+];

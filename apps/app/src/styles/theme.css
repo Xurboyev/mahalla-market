@@ -1,0 +1,81 @@
+/*
+ * MahallaMarket brend temasi.
+ * SEED Design tokenlari ustidan yoziladi: Karrot brend rangi (to'q sariq) o'rniga
+ * "mahalla yashili" ishlatiladi. Faqat semantik brand tokenlari almashtiriladi,
+ * shuning uchun barcha SEED komponentlari avtomatik yangi rangni oladi.
+ */
+
+:root {
+  --mm-green-50: #effaf4;
+  --mm-green-100: #e3f5ec;
+  --mm-green-200: #cdeedd;
+  --mm-green-300: #a3dcc0;
+  --mm-green-400: #5fbf93;
+  --mm-green-500: #22a06b;
+  --mm-green-600: #0a8754;
+  --mm-green-700: #08714a;
+  --mm-green-800: #075c3c;
+  --mm-green-900: #05402a;
+}
+
+/* Yorug' rejim — base.css dagi selektorlar bilan bir xil */
+:root,
+:root[data-seed-color-mode="system"][data-seed-user-color-scheme="light"],
+:root[data-seed-color-mode="light-only"],
+:root [data-seed-color-mode="light-only"] {
+  --seed-color-bg-brand-solid: var(--mm-green-600);
+  --seed-color-bg-brand-solid-pressed: var(--mm-green-700);
+  --seed-color-bg-brand-weak: var(--mm-green-100);
+  --seed-color-bg-brand-weak-pressed: var(--mm-green-200);
+  --seed-color-fg-brand: var(--mm-green-600);
+  --seed-color-fg-brand-contrast: var(--mm-green-800);
+  --seed-color-stroke-brand-solid: var(--mm-green-600);
+  --seed-color-stroke-brand-weak: var(--mm-green-300);
+}
+
+/* Qorong'i rejim */
+:root[data-seed-color-mode="system"][data-seed-user-color-scheme="dark"],
+:root[data-seed-color-mode="dark-only"],
+:root [data-seed-color-mode="dark-only"] {
+  --seed-color-bg-brand-solid: #139a63;
+  --seed-color-bg-brand-solid-pressed: #0f7f52;
+  --seed-color-bg-brand-weak: #10291d;
+  --seed-color-bg-brand-weak-pressed: #173a29;
+  --seed-color-fg-brand: #4cd295;
+  --seed-color-fg-brand-contrast: #7fe2b5;
+  --seed-color-stroke-brand-solid: #139a63;
+  --seed-color-stroke-brand-weak: #1f5a3e;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--seed-font-family);
+  background-color: var(--seed-color-bg-layer-default);
+  color: var(--seed-color-fg-neutral);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}

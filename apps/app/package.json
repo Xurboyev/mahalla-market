@@ -1,0 +1,35 @@
+{
+  "name": "@mahallamarket/app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 5173",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@seed-design/css": "^3.0.1",
+    "@seed-design/react": "^3.0.0",
+    "@seed-design/stackflow": "^2.0.6",
+    "@stackflow/config": "^2.0.0",
+    "@stackflow/core": "^3.1.0",
+    "@stackflow/plugin-basic-ui": "^1.18.4",
+    "@stackflow/plugin-history-sync": "^2.1.0",
+    "@stackflow/plugin-renderer-basic": "^1.1.16",
+    "@stackflow/react": "^2.1.4",
+    "lucide-react": "^1.51.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@seed-design/vite-plugin": "^2.1.1",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6"
+  }
+}
