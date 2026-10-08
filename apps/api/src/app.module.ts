@@ -5,9 +5,10 @@ import { DbModule } from "./db/db.module";
 import { HealthController } from "./health/health.controller";
 import { ListingsModule } from "./listings/listings.module";
 import { RegionsController } from "./regions/regions.controller";
+import { UploadsModule } from "./uploads/uploads.module";
 
 @Module({
-  imports: [DbModule, AuthModule, ListingsModule],
+  imports: [DbModule, AuthModule, ListingsModule, UploadsModule],
   controllers: [HealthController, RegionsController, CategoriesController],
 })
 export class AppModule {}

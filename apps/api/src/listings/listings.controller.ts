@@ -1,6 +1,19 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { Type } from "class-transformer";
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from "class-validator";
 import { JwtGuard } from "../auth/jwt.guard";
 import { ListingsService, type ListingStatus } from "./listings.service";
 
@@ -12,6 +25,8 @@ class CreateListingDto {
   @IsOptional() @IsInt() regionId?: number;
   @IsOptional() @IsInt() @Min(0) @Max(2_000_000_000) price?: number;
   @IsOptional() @IsBoolean() isFree?: boolean;
+  /** /uploads/presign orqali olingan publicUrl'lar, tartib bo'yicha */
+  @IsOptional() @IsArray() @ArrayMaxSize(10) @IsUrl({ require_tld: false }, { each: true }) imageUrls?: string[];
 }
 
 class StatusDto {

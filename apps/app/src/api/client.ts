@@ -101,6 +101,7 @@ export async function createListing(
     price?: number;
     isFree?: boolean;
     regionId?: number;
+    imageUrls?: string[];
   },
 ): Promise<Listing> {
   const res = await fetch(`${API_BASE}/listings`, {
@@ -110,6 +111,48 @@ export async function createListing(
   });
   if (!res.ok) return parseError(res, "E'lon joylashda xatolik");
   return res.json();
+}
+
+// ---- Rasm yuklash (MinIO presigned URL) ----
+export async function presignUpload(
+  token: string,
+  contentType: string,
+): Promise<{ uploadUrl: string; publicUrl: string; maxBytes: number }> {
+  const res = await fetch(`${API_BASE}/uploads/presign`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ contentType }),
+  });
+  if (!res.ok) return parseError(res, "Yuklash havolasi olinmadi");
+  return res.json();
+}
+
+export async function uploadToPresignedUrl(uploadUrl: string, blob: Blob, contentType: string): Promise<void> {
+  const res = await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": contentType }, body: blob });
+  if (!res.ok) throw new Error("Rasm yuklanmadi, qayta urinib ko'ring");
+}
+
+/** Rasm faylini WebP'ga siqib (katta tomoni <= maxSize), fayl yuklash uchun Blob qaytaradi. */
+export async function compressToWebp(file: File, maxSize = 1600, quality = 0.82): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas qo'llab-quvvatlanmaydi");
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+  if (!blob) throw new Error("Rasmni siqishda xatolik");
+  return blob;
+}
+
+/** Rasm faylini tanlangandan so'ng: siqadi, presigned URL oladi, yuklaydi, public URL qaytaradi. */
+export async function uploadListingImage(token: string, file: File): Promise<string> {
+  const blob = await compressToWebp(file);
+  const { uploadUrl, publicUrl } = await presignUpload(token, "image/webp");
+  await uploadToPresignedUrl(uploadUrl, blob, "image/webp");
+  return publicUrl;
 }
 
 /**

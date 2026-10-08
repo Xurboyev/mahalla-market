@@ -126,7 +126,15 @@ export class ListingsService {
 
   async create(
     sellerId: string,
-    dto: { title: string; description?: string; categoryId: number; regionId?: number; price?: number | null; isFree?: boolean },
+    dto: {
+      title: string;
+      description?: string;
+      categoryId: number;
+      regionId?: number;
+      price?: number | null;
+      isFree?: boolean;
+      imageUrls?: string[];
+    },
   ) {
     let regionId = dto.regionId;
     if (!regionId) {
@@ -147,6 +155,11 @@ export class ListingsService {
         price: isFree ? null : (dto.price ?? null),
       })
       .returning({ id: listings.id });
+    if (dto.imageUrls?.length) {
+      await this.db.insert(listingImages).values(
+        dto.imageUrls.slice(0, 10).map((url, position) => ({ listingId: row.id, url, position })),
+      );
+    }
     return this.get(row.id);
   }
 

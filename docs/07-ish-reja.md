@@ -48,11 +48,13 @@ boyitib, joriy kod holatiga qarab aniq sprint-reja chiqaradi.
 
 **Brauzerda to'liq sinovdan o'tkazildi:** OTP login → mahalla tanlash → e'lon yaratish → lentada ko'rinishi — barchasi haqiqiy API orqali ishlayapti (demo ma'lumotlarsiz).
 
-### Sprint 1.4 — Rasm yuklash — ~3-4 kun
-6. API: `POST /uploads/presign` (MinIO/S3 presigned PUT URL qaytaradi), limit: 10 rasm, JPEG/PNG/WebP, 5MB
-7. Rasm yuklangandan keyin WebP'ga siqish (worker yoki to'g'ridan-to'g'ri, MVP uchun oddiy sharp bilan sinxron ham bo'ladi)
-8. `listings.images` jadvaliga yozish, `POST /listings`ga `imageIds`/`imageUrls` qo'shish
-9. `NewListingActivity`: kamera/galereya tanlash, oldindan ko'rish, yuklash progressi
+### Sprint 1.4 — Rasm yuklash — ✅ Bajarildi (2026-10-08)
+6. ✅ API: `uploads` moduli — `POST /uploads/presign` (auth), MinIO/S3 presigned PUT URL qaytaradi; ilova ishga tushganda bucket avtomatik yaratiladi va public-read qilinadi
+7. ✅ Rasm brauzer tomonida (canvas) WebP'ga siqiladi (max 1600px, sifat 0.82) — serverga yuklashdan oldin, backend sodda qoladi
+8. ✅ `listings.images` jadvaliga yozish, `POST /listings`ga `imageUrls` (string[], max 10) qo'shildi
+9. ✅ `NewListingActivity`: kamera/galereya tanlash (ko'p fayl), oldindan ko'rish, yuklash holati (bulduradi), o'chirish tugmasi
+
+**Brauzerda to'liq sinovdan o'tkazildi:** rasm tanlash → WebP siqish → MinIO'ga yuklash → e'lon yaratish → lentada haqiqiy rasm bilan ko'rinishi.
 
 ### Sprint 2.1 — Chat moduli — ~1 hafta
 10. API: `chat` modul — `ChatRoom`/`Message` uchun REST (`POST /chat/rooms` e'lon bo'yicha ochish, `GET /chat/rooms`, `GET /chat/rooms/:id/messages`) + Socket.IO gateway (`message:send`, `message:new`, `room:read`)
