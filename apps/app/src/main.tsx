@@ -4,12 +4,15 @@ import "./styles/theme.css";
 
 import { StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
+import { AuthProvider } from "./auth/AuthContext";
 import { Stack } from "./stackflow/stack";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Suspense>
-      <Stack />
+      <AuthProvider>
+        <Stack />
+      </AuthProvider>
     </Suspense>
   </StrictMode>,
 );

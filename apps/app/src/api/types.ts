@@ -30,3 +30,27 @@ export type ChatMessage = {
   body: string;
   createdAt: string;
 };
+
+export type RegionLevel = "VILOYAT" | "TUMAN" | "MFY";
+
+export type Region = {
+  id: number;
+  soato: string | null;
+  name: string;
+  nameRu?: string | null;
+  level: RegionLevel;
+  parentId: number | null;
+  lat?: number | null;
+  lng?: number | null;
+};
+
+export type User = {
+  id: string;
+  phone: string;
+  name: string | null;
+  avatarUrl?: string | null;
+  regionId: number | null;
+  temperature: number;
+  isBlocked: boolean;
+  createdAt: string;
+};

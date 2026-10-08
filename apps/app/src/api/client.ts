@@ -1,7 +1,8 @@
 import { CATEGORIES, LISTINGS } from "./demo-data";
-import type { Category, Listing } from "./types";
+import type { Category, Listing, Region, User } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
+const TOKEN_KEY = "mm_token";
 
 /** Backend javobini ilova modeliga o'giradi. Backend tayyor bo'lmasa demo ma'lumot qaytaradi. */
 async function tryFetch<T>(path: string): Promise<T | null> {
@@ -12,6 +13,103 @@ async function tryFetch<T>(path: string): Promise<T | null> {
   } catch {
     return null;
   }
+}
+
+// ---- Auth: token saqlash ----
+export function getToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setToken(token: string | null): void {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* localStorage mavjud bo'lmasa (SSR/privat rejim) — jim o'tkazamiz */
+  }
+}
+
+async function parseError(res: Response, fallback: string): Promise<never> {
+  const data = await res.json().catch(() => null);
+  throw new Error((data && (data.message as string)) || fallback);
+}
+
+// ---- Auth: telefon + OTP ----
+export async function requestOtp(phone: string): Promise<{ ok: boolean; ttl: number }> {
+  const res = await fetch(`${API_BASE}/auth/otp/request`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone }),
+  });
+  if (!res.ok) return parseError(res, "Kod yuborilmadi");
+  return res.json();
+}
+
+export async function verifyOtp(phone: string, code: string): Promise<{ accessToken: string; user: User }> {
+  const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, code }),
+  });
+  if (!res.ok) return parseError(res, "Kod noto'g'ri yoki muddati o'tgan");
+  return res.json();
+}
+
+export async function getMe(token: string): Promise<User | null> {
+  const res = await fetch(`${API_BASE}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function updateMe(
+  token: string,
+  data: { name?: string; regionId?: number },
+): Promise<User> {
+  const res = await fetch(`${API_BASE}/auth/me`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) return parseError(res, "Saqlashda xatolik");
+  return res.json();
+}
+
+// ---- Hududlar (viloyat → tuman → MFY) ----
+export async function getRegions(parentId?: number): Promise<Region[]> {
+  const qs = parentId !== undefined ? `?parentId=${parentId}` : "";
+  const data = await tryFetch<Region[]>(`/regions${qs}`);
+  return data ?? [];
+}
+
+export async function getRegion(id: number): Promise<Region | null> {
+  return tryFetch<Region>(`/regions/${id}`);
+}
+
+// ---- E'lon yaratish (auth talab qiladi) ----
+export async function createListing(
+  token: string,
+  data: {
+    title: string;
+    categoryId: number;
+    description?: string;
+    price?: number;
+    isFree?: boolean;
+    regionId?: number;
+  },
+): Promise<Listing> {
+  const res = await fetch(`${API_BASE}/listings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) return parseError(res, "E'lon joylashda xatolik");
+  return res.json();
 }
 
 /**

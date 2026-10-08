@@ -1,5 +1,5 @@
 import { HStack, Text, VStack } from "@seed-design/react";
-import { type ActivityComponentType, useFlow } from "@stackflow/react";
+import { type ActivityComponentType, useActivity, useFlow } from "@stackflow/react";
 import { Bell, ChevronDown, Heart, MessageCircle, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -12,7 +12,8 @@ import {
 import { AppScreen, AppScreenContent } from "seed-design/ui/app-screen";
 import { Badge } from "seed-design/ui/badge";
 import { Chip } from "seed-design/ui/chip";
-import { getCategories, getListings, formatPrice, timeAgo, STATUS_LABEL } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { getCategories, getListings, getRegion, formatPrice, timeAgo, STATUS_LABEL } from "../api/client";
 import type { Category, Listing } from "../api/types";
 import { ListingThumb } from "../components/ListingThumb";
 
@@ -24,11 +25,14 @@ declare module "@stackflow/config" {
 
 const FeedActivity: ActivityComponentType<"FeedActivity"> = () => {
   const { push } = useFlow();
+  const activity = useActivity();
+  const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<number | undefined>();
   const [items, setItems] = useState<Listing[] | null>(null);
+  const [mahallaName, setMahallaName] = useState<string | null>(null);
 
-  const load = async () => setItems(await getListings({ categoryId }));
+  const load = async () => setItems(await getListings({ categoryId, regionId: user?.regionId ?? undefined }));
 
   useEffect(() => {
     getCategories().then(setCategories);
@@ -38,15 +42,41 @@ const FeedActivity: ActivityComponentType<"FeedActivity"> = () => {
     setItems(null);
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId]);
+  }, [categoryId, user?.regionId]);
+
+  // Boshqa ekrandan (masalan yangi e'lon joylab) qaytganda lentani yangilaymiz
+  useEffect(() => {
+    if (activity.isActive) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activity.isActive]);
+
+  useEffect(() => {
+    if (!user?.regionId) {
+      setMahallaName(null);
+      return;
+    }
+    getRegion(user.regionId).then((r) => setMahallaName(r?.name ?? null));
+  }, [user?.regionId]);
+
+  const openMahallaPicker = () => {
+    push(user ? "RegionSelectActivity" : "LoginActivity", {});
+  };
+
+  const openNewListing = () => {
+    push(user ? "NewListingActivity" : "LoginActivity", {});
+  };
 
   return (
     <AppScreen>
       <AppBar>
         <AppBarLeft>
-          <button type="button" style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <button
+            type="button"
+            onClick={openMahallaPicker}
+            style={{ display: "flex", alignItems: "center", gap: 2 }}
+          >
             <Text textStyle="t6Bold" color="fg.neutral">
-              Yunusobod-4
+              {mahallaName ?? "Mahalla tanlang"}
             </Text>
             <ChevronDown size={18} />
           </button>
@@ -167,7 +197,7 @@ const FeedActivity: ActivityComponentType<"FeedActivity"> = () => {
 
       <button
         type="button"
-        onClick={() => push("NewListingActivity", {})}
+        onClick={openNewListing}
         style={{
           position: "absolute",
           right: 16,

@@ -7,7 +7,8 @@ import { AppScreen, AppScreenContent } from "seed-design/ui/app-screen";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Chip } from "seed-design/ui/chip";
 import { TextField, TextFieldInput, TextFieldTextarea } from "seed-design/ui/text-field";
-import { getCategories } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { createListing, getCategories } from "../api/client";
 import type { Category } from "../api/types";
 
 declare module "@stackflow/config" {
@@ -16,9 +17,10 @@ declare module "@stackflow/config" {
   }
 }
 
-// TODO: POST /api/listings (auth) va rasm yuklash (presigned URL) — Sprint 1
+// TODO: Rasm yuklash (presigned URL) — Sprint 1.4
 const NewListingActivity: ActivityComponentType<"NewListingActivity"> = () => {
   const { pop } = useFlow();
+  const { token, user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   useEffect(() => {
     getCategories().then(setCategories);
@@ -28,8 +30,31 @@ const NewListingActivity: ActivityComponentType<"NewListingActivity"> = () => {
   const [isFree, setIsFree] = useState(false);
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const valid = title.trim().length >= 3 && categoryId !== null && (isFree || price !== "");
+
+  const submit = async () => {
+    if (!valid || !token || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await createListing(token, {
+        title: title.trim(),
+        categoryId: categoryId!,
+        description: description.trim() || undefined,
+        isFree,
+        price: isFree ? undefined : Number(price),
+        regionId: user?.regionId ?? undefined,
+      });
+      pop();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "E'lon joylashda xatolik yuz berdi");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <AppScreen>
@@ -110,7 +135,13 @@ const NewListingActivity: ActivityComponentType<"NewListingActivity"> = () => {
             <TextFieldTextarea placeholder="Mahalladoshlaringizga buyum haqida yozing" autoresize />
           </TextField>
 
-          <ActionButton size="large" variant="brandSolid" disabled={!valid} onClick={() => pop()}>
+          {error && (
+            <Text textStyle="t4Regular" color="fg.negative">
+              {error}
+            </Text>
+          )}
+
+          <ActionButton size="large" variant="brandSolid" disabled={!valid} loading={submitting} onClick={submit}>
             Joylash
           </ActionButton>
         </VStack>

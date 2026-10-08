@@ -38,12 +38,15 @@ boyitib, joriy kod holatiga qarab aniq sprint-reja chiqaradi.
 
 ## 3. Sprint-reja (aniq vazifalar)
 
-### Sprint 1.3 — Auth + mahalla tanlash (ilova tomoni) — ~1 hafta
-1. `apps/app`: `LoginActivity` — telefon raqam kiritish → `POST /auth/otp/request` → kod kiritish ekrani → `POST /auth/otp/verify` → `accessToken`'ni saqlash (localStorage/secure storage)
-2. Stackflow stack konfiguratsiyasiga `LoginActivity` qo'shish, auth bo'lmasa avtomatik shu ekranga yo'naltirish
-3. `api/client.ts`ga `Authorization: Bearer` header qo'shish, 401'da tokenni tozalab login'ga qaytarish
-4. Mahalla tanlash ekrani: `GET /regions` (level=MFY, parentId bo'yicha drill-down: viloyat→tuman→MFY) → tanlangandan keyin `PATCH /auth/me { regionId }`
-5. Lenta sarlavhasida tanlangan mahalla nomi ko'rsatiladi, bosilganda tanlash ekraniga qaytadi
+### Sprint 1.3 — Auth + mahalla tanlash (ilova tomoni) — ✅ Bajarildi (2026-10-08)
+1. ✅ `apps/app`: `LoginActivity` — telefon raqam kiritish → `POST /auth/otp/request` → kod kiritish ekrani (60s cooldown) → `POST /auth/otp/verify` → `accessToken`'ni `localStorage`da saqlash
+2. ✅ Stackflow stack konfiguratsiyasiga `LoginActivity`/`RegionSelectActivity` qo'shildi (`/kirish`, `/mahalla`), `AuthProvider` (`src/auth/AuthContext.tsx`) butun ilovani o'raydi
+3. ✅ `api/client.ts`ga `Authorization: Bearer` header (auth so'rovlarida), token eskirsa `getMe()` null qaytarib avtomatik tozalanadi
+4. ✅ Mahalla tanlash ekrani: `GET /regions` bilan 3 bosqichli drill-down (viloyat→tuman→MFY, breadcrumb bilan) → `PATCH /auth/me { regionId }`
+5. ✅ Lenta sarlavhasida tanlangan mahalla nomi (`GET /regions/:id`), bosilganda tanlash ekraniga o'tadi; auth bo'lmasa avval Login'ga yo'naltiradi
+6. ✅ `NewListingActivity` haqiqiy `POST /listings`ga ulandi (auth token + foydalanuvchi mahallasi bilan); lenta qaytganda `activity.isActive` orqali avtomatik yangilanadi
+
+**Brauzerda to'liq sinovdan o'tkazildi:** OTP login → mahalla tanlash → e'lon yaratish → lentada ko'rinishi — barchasi haqiqiy API orqali ishlayapti (demo ma'lumotlarsiz).
 
 ### Sprint 1.4 — Rasm yuklash — ~3-4 kun
 6. API: `POST /uploads/presign` (MinIO/S3 presigned PUT URL qaytaradi), limit: 10 rasm, JPEG/PNG/WebP, 5MB

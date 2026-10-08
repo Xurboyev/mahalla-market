@@ -6,8 +6,10 @@ import { stackflow } from "@stackflow/react";
 import ChatActivity from "../activities/ChatActivity";
 import FeedActivity from "../activities/FeedActivity";
 import ListingActivity from "../activities/ListingActivity";
+import LoginActivity from "../activities/LoginActivity";
 import NewListingActivity from "../activities/NewListingActivity";
 import NotFoundActivity from "../activities/NotFoundActivity";
+import RegionSelectActivity from "../activities/RegionSelectActivity";
 import { config } from "./config";
 import { theme } from "./theme";
 
@@ -23,6 +25,8 @@ export const { Stack, actions } = stackflow({
     ListingActivity,
     ChatActivity,
     NewListingActivity,
+    LoginActivity,
+    RegionSelectActivity,
     NotFoundActivity,
   },
   plugins: [
