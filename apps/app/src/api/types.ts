@@ -26,9 +26,11 @@ export type Listing = {
 
 export type ChatMessage = {
   id: string;
-  fromMe: boolean;
+  roomId: string;
+  senderId: string;
   body: string;
   createdAt: string;
+  readAt: string | null;
 };
 
 export type RegionLevel = "VILOYAT" | "TUMAN" | "MFY";

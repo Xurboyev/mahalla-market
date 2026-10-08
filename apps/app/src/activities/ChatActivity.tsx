@@ -2,10 +2,12 @@ import { HStack, Text, VStack } from "@seed-design/react";
 import type { ActivityComponentType } from "@stackflow/react";
 import { SendHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { io, type Socket } from "socket.io-client";
 import { AppBar, AppBarBackButton, AppBarLeft, AppBarMain } from "seed-design/ui/app-bar";
 import { AppScreen, AppScreenContent } from "seed-design/ui/app-screen";
 import { MannerTemp } from "seed-design/ui/manner-temp";
-import { formatPrice, getListing } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { formatPrice, getChatHistory, getListing, markChatRead, openChatRoom, SOCKET_URL } from "../api/client";
 import type { ChatMessage, Listing } from "../api/types";
 import { ListingThumb } from "../components/ListingThumb";
 
@@ -16,17 +18,60 @@ declare module "@stackflow/config" {
 }
 
 const QUICK_REPLIES = ["Hali sotuvdami?", "Narxi kelishiladimi?", "Qachon ko'rsa bo'ladi?"];
+const SAFETY_NOTE = "Xavfsiz bitim uchun uchrashuvni gavjum, yorug' joyda belgilang.\nOldindan pul o'tkazmang.";
 
-// TODO: Socket.IO orqali backend chat moduliga ulanadi (Sprint 2)
 const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
+  const { token, user } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     getListing(params.listingId).then(setListing);
   }, [params.listingId]);
+
+  // Chat xonasini ochish + tarixni yuklash + Socket.IO ulanish
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    (async () => {
+      try {
+        const room = await openChatRoom(token, params.listingId);
+        if (!active) return;
+        setRoomId(room.id);
+        const history = await getChatHistory(token, room.id);
+        if (!active) return;
+        setMessages(history);
+        markChatRead(token, room.id).catch(() => {});
+
+        const socket = io(SOCKET_URL, { auth: { token }, transports: ["websocket", "polling"] });
+        socketRef.current = socket;
+        socket.on("connect", () => {
+          setConnected(true);
+          socket.emit("room:join", { roomId: room.id });
+        });
+        socket.on("disconnect", () => setConnected(false));
+        socket.on("message:new", (msg: ChatMessage) => {
+          if (msg.roomId !== room.id) return;
+          setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+          if (msg.senderId !== user?.id) markChatRead(token, room.id).catch(() => {});
+        });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Chat ochilmadi");
+      }
+    })();
+    return () => {
+      active = false;
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, params.listingId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,11 +79,10 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
 
   const send = (body: string) => {
     const trimmed = body.trim();
-    if (!trimmed) return;
-    setMessages((m) => [
-      ...m,
-      { id: crypto.randomUUID(), fromMe: true, body: trimmed, createdAt: new Date().toISOString() },
-    ]);
+    if (!trimmed || !roomId || !socketRef.current) return;
+    socketRef.current.emit("message:send", { roomId, body: trimmed }, (msg: ChatMessage) => {
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+    });
     setText("");
   };
 
@@ -52,6 +96,11 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
           <HStack gap="x1_5" align="center" justify="center">
             <Text textStyle="t5Bold">{listing?.seller.name ?? ""}</Text>
             {listing && <MannerTemp temperature={listing.seller.temperature} />}
+            {!connected && roomId && (
+              <Text textStyle="t2Regular" color="fg.neutralSubtle">
+                (ulanmoqda…)
+              </Text>
+            )}
           </HStack>
         </AppBarMain>
       </AppBar>
@@ -76,32 +125,39 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
         )}
 
         <VStack gap="x2" px="spacingX.globalGutter" py="x4" style={{ paddingBottom: 140 }}>
-          {messages.length === 0 && (
-            <VStack align="center" gap="x3" py="x10">
-              <Text textStyle="t4Regular" color="fg.neutralMuted" style={{ textAlign: "center" }}>
-                Xavfsiz bitim uchun uchrashuvni gavjum, yorug' joyda belgilang.
-                {"\n"}Oldindan pul o'tkazmang.
-              </Text>
-            </VStack>
+          {error && (
+            <Text textStyle="t4Regular" color="fg.negative" style={{ textAlign: "center" }}>
+              {error}
+            </Text>
           )}
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              style={{
-                alignSelf: m.fromMe ? "flex-end" : "flex-start",
-                maxWidth: "75%",
-                padding: "10px 14px",
-                borderRadius: 18,
-                background: m.fromMe
-                  ? "var(--seed-color-bg-brand-solid)"
-                  : "var(--seed-color-bg-neutral-weak)",
-                color: m.fromMe ? "#fff" : "var(--seed-color-fg-neutral)",
-                whiteSpace: "pre-wrap",
-              }}
+          <VStack align="center" gap="x1" py="x4">
+            <Text
+              textStyle="t4Regular"
+              color="fg.neutralMuted"
+              style={{ textAlign: "center", whiteSpace: "pre-wrap" }}
             >
-              {m.body}
-            </div>
-          ))}
+              {SAFETY_NOTE}
+            </Text>
+          </VStack>
+          {messages.map((m) => {
+            const fromMe = m.senderId === user?.id;
+            return (
+              <div
+                key={m.id}
+                style={{
+                  alignSelf: fromMe ? "flex-end" : "flex-start",
+                  maxWidth: "75%",
+                  padding: "10px 14px",
+                  borderRadius: 18,
+                  background: fromMe ? "var(--seed-color-bg-brand-solid)" : "var(--seed-color-bg-neutral-weak)",
+                  color: fromMe ? "#fff" : "var(--seed-color-fg-neutral)",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {m.body}
+              </div>
+            );
+          })}
           <div ref={endRef} />
         </VStack>
       </AppScreenContent>
@@ -151,6 +207,7 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
             onChange={(e) => setText(e.target.value)}
             placeholder="Xabar yozing"
             aria-label="Xabar"
+            disabled={!roomId}
             style={{
               flex: 1,
               padding: "10px 14px",
@@ -165,7 +222,7 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
           <button
             type="submit"
             aria-label="Yuborish"
-            disabled={!text.trim()}
+            disabled={!text.trim() || !roomId}
             style={{
               color: text.trim() ? "var(--seed-color-fg-brand)" : "var(--seed-color-fg-disabled)",
             }}

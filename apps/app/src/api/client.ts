@@ -1,7 +1,9 @@
 import { CATEGORIES, LISTINGS } from "./demo-data";
-import type { Category, Listing, Region, User } from "./types";
+import type { Category, ChatMessage, Listing, Region, User } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
+/** Socket.IO to'g'ridan-to'g'ri API serveriga ulanadi (Vite'ning /api proksisi WebSocket'ni qamramaydi). */
+export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ?? "http://localhost:4000";
 const TOKEN_KEY = "mm_token";
 
 /** Backend javobini ilova modeliga o'giradi. Backend tayyor bo'lmasa demo ma'lumot qaytaradi. */
@@ -153,6 +155,51 @@ export async function uploadListingImage(token: string, file: File): Promise<str
   const { uploadUrl, publicUrl } = await presignUpload(token, "image/webp");
   await uploadToPresignedUrl(uploadUrl, blob, "image/webp");
   return publicUrl;
+}
+
+// ---- Chat ----
+export type ChatRoomDto = {
+  id: string;
+  listingId: string;
+  buyerId: string;
+  sellerId: string;
+  createdAt: string;
+};
+
+export type ChatRoomSummary = {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  listingImageUrl: string | null;
+  otherUser: { id: string; name: string; temperature: number; avatarUrl: string | null };
+  lastMessage: string | null;
+  lastMessageAt: string;
+  unreadCount: number;
+};
+
+async function authedJson<T>(token: string, path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...init?.headers },
+  });
+  if (!res.ok) return parseError(res, "So'rov bajarilmadi");
+  return res.json();
+}
+
+export function openChatRoom(token: string, listingId: string): Promise<ChatRoomDto> {
+  return authedJson(token, "/chat/rooms", { method: "POST", body: JSON.stringify({ listingId }) });
+}
+
+export function listChatRooms(token: string): Promise<ChatRoomSummary[]> {
+  return authedJson(token, "/chat/rooms");
+}
+
+export function getChatHistory(token: string, roomId: string): Promise<ChatMessage[]> {
+  return authedJson(token, `/chat/rooms/${roomId}/messages`);
+}
+
+export function markChatRead(token: string, roomId: string): Promise<void> {
+  return authedJson(token, `/chat/rooms/${roomId}/read`, { method: "PATCH" });
 }
 
 /**

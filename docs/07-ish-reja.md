@@ -56,11 +56,13 @@ boyitib, joriy kod holatiga qarab aniq sprint-reja chiqaradi.
 
 **Brauzerda to'liq sinovdan o'tkazildi:** rasm tanlash → WebP siqish → MinIO'ga yuklash → e'lon yaratish → lentada haqiqiy rasm bilan ko'rinishi.
 
-### Sprint 2.1 — Chat moduli — ~1 hafta
-10. API: `chat` modul — `ChatRoom`/`Message` uchun REST (`POST /chat/rooms` e'lon bo'yicha ochish, `GET /chat/rooms`, `GET /chat/rooms/:id/messages`) + Socket.IO gateway (`message:send`, `message:new`, `room:read`)
-11. Xavfsizlik: xabar yuborishda avtomatik "Oldindan to'lov qilmang" ogohlantirish birinchi xabarda
-12. `ChatActivity`: ro'yxat + real vaqt xabarlar, o'qilgan belgisi
-13. Bildirishnoma: yangi xabar kelganda Telegram bot orqali (agar ulangan bo'lsa) yoki keyinroq Web Push
+### Sprint 2.1 — Chat moduli — ✅ Bajarildi (2026-10-08)
+10. ✅ API: `chat` moduli — REST (`POST /chat/rooms` e'lon bo'yicha ochish, `GET /chat/rooms` ro'yxat + oxirgi xabar + o'qilmagan soni, `GET /chat/rooms/:id/messages`, `PATCH /chat/rooms/:id/read`) + Socket.IO gateway (`room:join`, `message:send`, `message:new`, `room:read`), JWT handshake orqali autentifikatsiya
+11. ✅ Xavfsizlik: "Oldindan pul o'tkazmang, ochiq joyda uchrashing" ogohlantirishi har bir chat boshida ko'rsatiladi
+12. ✅ `ChatActivity`: real API + Socket.IO bilan ulandi — tarix yuklanadi, real vaqt xabarlar, ulanish holati ko'rsatiladi, `fromMe` `senderId` orqali aniqlanadi
+13. Bildirishnoma (Telegram/Web Push) — keyingi bosqichga qoldirildi
+
+**Brauzerda to'liq sinovdan o'tkazildi:** ikkita mustaqil Socket.IO ulanish (xaridor + sotuvchi) orasida real vaqtda ikki tomonlama xabar almashish — sahifa yangilanmasdan xabar darhol ko'rindi.
 
 ### Sprint 2.2 — Ishonch: baho + harorat — ~3-4 kun
 14. API: `POST /listings/:id/reviews` (faqat SOLD holatidagi e'lon, bitimda qatnashgan ikki tomon), `GET /users/:id/reviews`

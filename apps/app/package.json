@@ -21,7 +21,8 @@
     "@stackflow/react": "^2.1.4",
     "lucide-react": "^1.51.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
     "@seed-design/vite-plugin": "^2.1.1",
