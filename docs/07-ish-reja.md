@@ -64,15 +64,19 @@ boyitib, joriy kod holatiga qarab aniq sprint-reja chiqaradi.
 
 **Brauzerda to'liq sinovdan o'tkazildi:** ikkita mustaqil Socket.IO ulanish (xaridor + sotuvchi) orasida real vaqtda ikki tomonlama xabar almashish — sahifa yangilanmasdan xabar darhol ko'rindi.
 
-### Sprint 2.2 — Ishonch: baho + harorat — ~3-4 kun
-14. API: `POST /listings/:id/reviews` (faqat SOLD holatidagi e'lon, bitimda qatnashgan ikki tomon), `GET /users/:id/reviews`
-15. Harorat qayta hisoblash: review yaratilganda `02-product.md`dagi formula bo'yicha `users.temperature` yangilanadi (BullMQ job yoki to'g'ridan-to'g'ri, hajm kichik bo'lgani uchun sinxron yetarli)
-16. Profilda harorat + "qo'shilgan sana" ko'rsatish (past haroratni tekshirish konteksti — Daangn saboqi)
+### Sprint 2.2 — Ishonch: baho + harorat — ✅ Bajarildi (2026-10-08)
+14. ✅ API: `reviews` moduli — `POST /listings/:id/reviews` (faqat SOLD holatidagi e'lon, bitimda qatnashgan ikki tomon — chatRoom orqali tekshiriladi), `GET /users/:id/reviews`
+15. ✅ Harorat qayta hisoblash: review yaratilganda barcha reviewlar yig'indisidan deterministik qayta hisoblanadi (drift bo'lmasligi uchun), `02-product.md`dagi formula bo'yicha (5★=+0.4 … 1★=−0.6), 0–99 oralig'ida
+16. ✅ Takroriy baho — 409 Conflict (Postgres unique constraint, `pgCode 23505` orqali aniqlanadi)
+17. ✅ `ListingActivity`: egasi uchun holat boshqarish (Faol/Band/Sotildi chip'lari) — oldin yo'q edi, shu sprintda qo'shildi
+18. ✅ `ChatActivity`: bitim SOLD bo'lganda avtomatik "qarshi tomonga baho bering" blok (5 yulduz) ko'rinadi, yuborilgach "rahmat" xabari
+
+**Brauzerda to'liq sinovdan o'tkazildi:** xaridor chat ochdi → sotuvchi (boshqa JWT bilan) e'lonni SOLD qildi → xaridor 5 yulduz bahо berdi → sotuvchi harorati 51.8°C dan 36.9°C ga **real vaqtda** qayta hisoblandi va API orqali tasdiqlandi.
 
 ### Sprint 2.3 — Moderatsiya — ~2-3 kun
-17. API: `POST /reports` (LISTING/USER/MESSAGE), admin uchun oddiy `GET /reports?status=OPEN`
-18. Taqiqlangan so'zlar/kategoriya filtri e'lon yaratishda (oddiy ro'yxat asosida, ML keyinroq)
-19. Chatda "Shikoyat qilish" tugmasi doim ko'rinadi
+19. API: `POST /reports` (LISTING/USER/MESSAGE), admin uchun oddiy `GET /reports?status=OPEN`
+20. Taqiqlangan so'zlar/kategoriya filtri e'lon yaratishda (oddiy ro'yxat asosida, ML keyinroq)
+21. Chatda "Shikoyat qilish" tugmasi doim ko'rinadi
 
 ### Sprint 3 — Pilot tayyorligi — ~2 hafta
 20. Eskiz.uz haqiqiy SMS integratsiyasi (BullMQ navbati, retry)

@@ -13,9 +13,11 @@ import { AppScreen, AppScreenContent } from "seed-design/ui/app-screen";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Avatar } from "seed-design/ui/avatar";
 import { Badge } from "seed-design/ui/badge";
+import { Chip } from "seed-design/ui/chip";
 import { IdentityPlaceholder } from "seed-design/ui/identity-placeholder";
 import { MannerTemp } from "seed-design/ui/manner-temp";
-import { formatPrice, getCategories, getListing, STATUS_LABEL, timeAgo } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { formatPrice, getCategories, getListing, setListingStatus, STATUS_LABEL, timeAgo } from "../api/client";
 import type { Category, Listing } from "../api/types";
 import { ListingThumb } from "../components/ListingThumb";
 
@@ -27,9 +29,11 @@ declare module "@stackflow/config" {
 
 const ListingActivity: ActivityComponentType<"ListingActivity"> = ({ params }) => {
   const { push } = useFlow();
+  const { token, user } = useAuth();
   const [listing, setListing] = useState<Listing | null | undefined>(undefined);
   const [liked, setLiked] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [statusBusy, setStatusBusy] = useState(false);
 
   useEffect(() => {
     getCategories().then(setCategories);
@@ -38,6 +42,19 @@ const ListingActivity: ActivityComponentType<"ListingActivity"> = ({ params }) =
   useEffect(() => {
     getListing(params.listingId).then(setListing);
   }, [params.listingId]);
+
+  const isOwner = !!user && !!listing && listing.seller.id === user.id;
+
+  const changeStatus = async (status: "ACTIVE" | "RESERVED" | "SOLD") => {
+    if (!token || !listing || statusBusy) return;
+    setStatusBusy(true);
+    try {
+      const updated = await setListingStatus(token, listing.id, status);
+      setListing(updated);
+    } finally {
+      setStatusBusy(false);
+    }
+  };
 
   return (
     <AppScreen layerOffsetTop="none" tone="transparent">
@@ -131,30 +148,68 @@ const ListingActivity: ActivityComponentType<"ListingActivity"> = ({ params }) =
             borderTop: "1px solid var(--seed-color-stroke-neutral-muted)",
           }}
         >
-          <button
-            type="button"
-            aria-label="Tanlanganlarga qo'shish"
-            aria-pressed={liked}
-            onClick={() => setLiked((v) => !v)}
-            style={{ color: liked ? "var(--seed-color-fg-brand)" : "var(--seed-color-fg-neutral-subtle)" }}
-          >
-            <Heart size={24} fill={liked ? "currentColor" : "none"} />
-          </button>
-          <div style={{ width: 1, alignSelf: "stretch", background: "var(--seed-color-stroke-neutral-muted)" }} />
-          <VStack flexGrow={1}>
-            <Text textStyle="t6Bold">{formatPrice(listing)}</Text>
-            <Text textStyle="t2Regular" color="fg.neutralSubtle">
-              Narx kelishiladi
-            </Text>
-          </VStack>
-          <ActionButton
-            size="medium"
-            variant="brandSolid"
-            disabled={listing.status === "SOLD"}
-            onClick={() => push("ChatActivity", { listingId: listing.id })}
-          >
-            Chatda yozish
-          </ActionButton>
+          {isOwner ? (
+            <VStack flexGrow={1} gap="x2">
+              <Text textStyle="t3Regular" color="fg.neutralSubtle">
+                Bu sizning e'loningiz — holatini boshqaring
+              </Text>
+              <HStack gap="x2" wrap>
+                <Chip.Toggle
+                  variant="solid"
+                  checked={listing.status === "ACTIVE"}
+                  disabled={statusBusy}
+                  onCheckedChange={() => changeStatus("ACTIVE")}
+                >
+                  <Chip.Label>Faol</Chip.Label>
+                </Chip.Toggle>
+                <Chip.Toggle
+                  variant="solid"
+                  checked={listing.status === "RESERVED"}
+                  disabled={statusBusy}
+                  onCheckedChange={() => changeStatus("RESERVED")}
+                >
+                  <Chip.Label>Band qilingan</Chip.Label>
+                </Chip.Toggle>
+                <Chip.Toggle
+                  variant="solid"
+                  checked={listing.status === "SOLD"}
+                  disabled={statusBusy}
+                  onCheckedChange={() => changeStatus("SOLD")}
+                >
+                  <Chip.Label>Sotildi</Chip.Label>
+                </Chip.Toggle>
+              </HStack>
+            </VStack>
+          ) : (
+            <>
+              <button
+                type="button"
+                aria-label="Tanlanganlarga qo'shish"
+                aria-pressed={liked}
+                onClick={() => setLiked((v) => !v)}
+                style={{ color: liked ? "var(--seed-color-fg-brand)" : "var(--seed-color-fg-neutral-subtle)" }}
+              >
+                <Heart size={24} fill={liked ? "currentColor" : "none"} />
+              </button>
+              <div
+                style={{ width: 1, alignSelf: "stretch", background: "var(--seed-color-stroke-neutral-muted)" }}
+              />
+              <VStack flexGrow={1}>
+                <Text textStyle="t6Bold">{formatPrice(listing)}</Text>
+                <Text textStyle="t2Regular" color="fg.neutralSubtle">
+                  Narx kelishiladi
+                </Text>
+              </VStack>
+              <ActionButton
+                size="medium"
+                variant="brandSolid"
+                disabled={listing.status === "SOLD"}
+                onClick={() => push("ChatActivity", { listingId: listing.id })}
+              >
+                Chatda yozish
+              </ActionButton>
+            </>
+          )}
         </HStack>
       )}
     </AppScreen>

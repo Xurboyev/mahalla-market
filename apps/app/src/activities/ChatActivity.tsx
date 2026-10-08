@@ -1,13 +1,23 @@
 import { HStack, Text, VStack } from "@seed-design/react";
 import type { ActivityComponentType } from "@stackflow/react";
-import { SendHorizontal } from "lucide-react";
+import { SendHorizontal, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { AppBar, AppBarBackButton, AppBarLeft, AppBarMain } from "seed-design/ui/app-bar";
 import { AppScreen, AppScreenContent } from "seed-design/ui/app-screen";
+import { ActionButton } from "seed-design/ui/action-button";
 import { MannerTemp } from "seed-design/ui/manner-temp";
 import { useAuth } from "../auth/AuthContext";
-import { formatPrice, getChatHistory, getListing, markChatRead, openChatRoom, SOCKET_URL } from "../api/client";
+import {
+  createReview,
+  formatPrice,
+  getChatHistory,
+  getListing,
+  markChatRead,
+  openChatRoom,
+  SOCKET_URL,
+  type ChatRoomDto,
+} from "../api/client";
 import type { ChatMessage, Listing } from "../api/types";
 import { ListingThumb } from "../components/ListingThumb";
 
@@ -23,13 +33,18 @@ const SAFETY_NOTE = "Xavfsiz bitim uchun uchrashuvni gavjum, yorug' joyda belgil
 const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
   const { token, user } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
-  const [roomId, setRoomId] = useState<string | null>(null);
+  const [room, setRoom] = useState<ChatRoomDto | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [reviewDone, setReviewDone] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
+  const roomId = room?.id ?? null;
 
   useEffect(() => {
     getListing(params.listingId).then(setListing);
@@ -41,25 +56,25 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
     let active = true;
     (async () => {
       try {
-        const room = await openChatRoom(token, params.listingId);
+        const r = await openChatRoom(token, params.listingId);
         if (!active) return;
-        setRoomId(room.id);
-        const history = await getChatHistory(token, room.id);
+        setRoom(r);
+        const history = await getChatHistory(token, r.id);
         if (!active) return;
         setMessages(history);
-        markChatRead(token, room.id).catch(() => {});
+        markChatRead(token, r.id).catch(() => {});
 
         const socket = io(SOCKET_URL, { auth: { token }, transports: ["websocket", "polling"] });
         socketRef.current = socket;
         socket.on("connect", () => {
           setConnected(true);
-          socket.emit("room:join", { roomId: room.id });
+          socket.emit("room:join", { roomId: r.id });
         });
         socket.on("disconnect", () => setConnected(false));
         socket.on("message:new", (msg: ChatMessage) => {
-          if (msg.roomId !== room.id) return;
+          if (msg.roomId !== r.id) return;
           setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-          if (msg.senderId !== user?.id) markChatRead(token, room.id).catch(() => {});
+          if (msg.senderId !== user?.id) markChatRead(token, r.id).catch(() => {});
         });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Chat ochilmadi");
@@ -84,6 +99,26 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
     });
     setText("");
+  };
+
+  // Bitim yopilgan (SOLD) bo'lsa — qarshi tomonga baho berish imkoni
+  const otherUserId = room && user ? (room.buyerId === user.id ? room.sellerId : room.buyerId) : null;
+  const canReview = !!token && !!otherUserId && listing?.status === "SOLD" && !reviewDone;
+
+  const submitReview = async () => {
+    if (!token || !otherUserId || rating === 0 || reviewBusy) return;
+    setReviewBusy(true);
+    setReviewError(null);
+    try {
+      await createReview(token, params.listingId, { targetId: otherUserId, rating });
+      setReviewDone(true);
+    } catch (e) {
+      // 409 — allaqachon baho berilgan, formani yashiramiz
+      setReviewDone(true);
+      setReviewError(e instanceof Error ? e.message : null);
+    } finally {
+      setReviewBusy(false);
+    }
   };
 
   return (
@@ -139,6 +174,48 @@ const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
               {SAFETY_NOTE}
             </Text>
           </VStack>
+          {canReview && (
+            <VStack
+              align="center"
+              gap="x2"
+              py="x4"
+              style={{
+                border: "1px solid var(--seed-color-stroke-neutral-muted)",
+                borderRadius: 12,
+                margin: "0 4px",
+                padding: 16,
+              }}
+            >
+              <Text textStyle="t4Bold">Bitim yakunlandi — qarshi tomonga baho bering</Text>
+              <HStack gap="x1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-label={`${n} yulduz`}
+                    onClick={() => setRating(n)}
+                    style={{ color: n <= rating ? "#f5a623" : "var(--seed-color-fg-neutral-subtle)" }}
+                  >
+                    <Star size={28} fill={n <= rating ? "currentColor" : "none"} />
+                  </button>
+                ))}
+              </HStack>
+              <ActionButton
+                size="medium"
+                variant="brandSolid"
+                disabled={rating === 0}
+                loading={reviewBusy}
+                onClick={submitReview}
+              >
+                Baho yuborish
+              </ActionButton>
+            </VStack>
+          )}
+          {reviewDone && !reviewError && (
+            <Text textStyle="t3Regular" color="fg.positive" style={{ textAlign: "center" }}>
+              Rahmat! Bahoyingiz qabul qilindi.
+            </Text>
+          )}
           {messages.map((m) => {
             const fromMe = m.senderId === user?.id;
             return (

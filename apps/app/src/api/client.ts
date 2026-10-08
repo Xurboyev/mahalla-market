@@ -115,6 +115,34 @@ export async function createListing(
   return res.json();
 }
 
+export async function setListingStatus(
+  token: string,
+  id: string,
+  status: "ACTIVE" | "RESERVED" | "SOLD" | "HIDDEN",
+): Promise<Listing> {
+  const res = await fetch(`${API_BASE}/listings/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) return parseError(res, "Holatni o'zgartirishda xatolik");
+  return res.json();
+}
+
+export async function createReview(
+  token: string,
+  listingId: string,
+  data: { targetId: string; rating: number; text?: string },
+): Promise<{ id: string; targetTemperature: number }> {
+  const res = await fetch(`${API_BASE}/listings/${listingId}/reviews`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) return parseError(res, "Baho berishda xatolik");
+  return res.json();
+}
+
 // ---- Rasm yuklash (MinIO presigned URL) ----
 export async function presignUpload(
   token: string,
