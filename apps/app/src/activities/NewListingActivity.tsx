@@ -22,8 +22,16 @@ const MAX_IMAGES = 10;
 type ImageSlot = { id: string; previewUrl: string; publicUrl?: string; uploading: boolean; error?: string };
 
 const NewListingActivity: ActivityComponentType<"NewListingActivity"> = () => {
-  const { pop } = useFlow();
+  const { pop, push } = useFlow();
   const { token, user } = useAuth();
+
+  // Token yo'q bo'lsa — login qildirib, keyin shu formaga qaytaramiz
+  useEffect(() => {
+    if (!token) {
+      push("LoginActivity", {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
   const [categories, setCategories] = useState<Category[]>([]);
   useEffect(() => {
     getCategories().then(setCategories);

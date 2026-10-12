@@ -1,5 +1,5 @@
 import { HStack, Text, VStack } from "@seed-design/react";
-import type { ActivityComponentType } from "@stackflow/react";
+import { type ActivityComponentType, useFlow } from "@stackflow/react";
 import { Flag, SendHorizontal, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
@@ -33,6 +33,15 @@ const SAFETY_NOTE = "Xavfsiz bitim uchun uchrashuvni gavjum, yorug' joyda belgil
 
 const ChatActivity: ActivityComponentType<"ChatActivity"> = ({ params }) => {
   const { token, user } = useAuth();
+  const { push } = useFlow();
+
+  // Token yo'q bo'lsa — login qildirib, keyin shu chatga qaytaramiz
+  useEffect(() => {
+    if (!token) {
+      push("LoginActivity", {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
   const [listing, setListing] = useState<Listing | null>(null);
   const [room, setRoom] = useState<ChatRoomDto | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
